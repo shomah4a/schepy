@@ -1,8 +1,15 @@
 #-*- coding:utf-8 -*-
 
 from pypy.rlib.parsing import tree
+from pypy.rlib import debug
 
 from schepy import model
+
+
+class VisitError(ValueError):
+    u'''
+    Visitor に足りない
+    '''
 
 
 def integer(node):
@@ -18,8 +25,6 @@ def float_(node):
     u'''
     浮動小数
     '''
-
-    print 'eeeeeeeee', node
 
     return model.Float(float(node.token.source))
 
@@ -56,8 +61,6 @@ def proc_star(func, nodes):
 
 def symbol(node):
 
-    print 'bbbbbbbb', node.token.source
-
     return model.Symbol(node.token.source)
 
 
@@ -82,19 +85,17 @@ def sexpr(node):
 
 
 def list_(node):
-
+    
     children = node.children
 
     last = len(children) - 1
 
-    print 'len', len(children)
+    if last < 0:
+        raise ValueError, "invalid value"
+
     open_paren = children[0]
     middle = children[1:last]
     close_paren = children[last]
-
-    print 'open', open_paren
-    print 'middle', children[1:last]
-    print 'close', close_paren
 
     if middle:
         syms = middle[0].children
@@ -111,12 +112,6 @@ def list_(node):
 
     return make_list(symbols, last)
 
-
-
-class VisitError(ValueError):
-    u'''
-    Visitor に足りない
-    '''
 
 
 visitor_dict = dict(
@@ -136,5 +131,6 @@ def visit(node):
     if (symbol in visitor_dict):
         return visitor_dict[symbol](node)
 
-    print symbol
     raise VisitError('Undefined symbol: ' + symbol)
+
+
